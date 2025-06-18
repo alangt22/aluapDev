@@ -1,6 +1,5 @@
-import { Link } from "react-router-dom";
 import { FiUser } from "react-icons/fi";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { FiLogOut } from "react-icons/fi";
 import { auth} from "../../services/firebaseConnection";
