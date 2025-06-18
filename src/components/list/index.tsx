@@ -1,0 +1,257 @@
+import { useEffect, useState } from "react";
+import {
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
+import { db } from "../../services/firebaseConnection";
+import { Container } from "../container";
+import { FiEdit, FiTrash2, FiPlus, FiArrowLeft } from "react-icons/fi";
+import { Link } from "react-router-dom";
+
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Loading } from "../loading";
+
+type ListProps = {
+  listaId: string;
+};
+
+interface ItemProps {
+  id: string;
+  nome: string;
+  valor: number;
+}
+
+export function List({ listaId }: ListProps) {
+  const [listaInfo, setListaInfo] = useState<any>(null);
+  const [itens, setItens] = useState<ItemProps[]>([]);
+
+  const [open, setOpen] = useState(false);
+  const [editItemId, setEditItemId] = useState<string | null>(null);
+  const [nomeItem, setNomeItem] = useState("");
+  const [valorItem, setValorItem] = useState("");
+
+  const [loading, setLoading] = useState(false);
+
+  const formatarValor = (valor: number) =>
+    new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(valor);
+
+  useEffect(() => {
+    const fetchListaInfo = async () => {
+      const docRef = doc(db, "listas", listaId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setListaInfo({ id: docSnap.id, ...docSnap.data() });
+      }
+    };
+
+    if (listaId) fetchListaInfo();
+  }, [listaId]);
+
+  useEffect(() => {
+    if (listaId) {
+      const q = query(collection(db, "listas", listaId, "itens"));
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const items = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          nome: doc.data().nome,
+          valor: doc.data().valor,
+        }));
+        setItens(items);
+      });
+
+      return () => unsubscribe();
+    }
+  }, [listaId]);
+
+  async function handleSaveItem() {
+    const valor = parseFloat(valorItem);
+    if (!nomeItem || isNaN(valor)) {
+      alert("Preencha nome e valor corretamente");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (editItemId) {
+        const ref = doc(db, "listas", listaId, "itens", editItemId);
+        await updateDoc(ref, { nome: nomeItem, valor });
+      } else {
+        await addDoc(collection(db, "listas", listaId, "itens"), {
+          nome: nomeItem,
+          valor,
+        });
+      }
+
+      setNomeItem("");
+      setValorItem("");
+      setEditItemId(null);
+      setOpen(false);
+      setLoading(false);
+    } catch (err) {
+      console.error("Erro ao salvar item:", err);
+      setLoading(false);
+    }
+  }
+
+  async function handleEditItem(itemId: string) {
+    const ref = doc(db, "listas", listaId, "itens", itemId);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      setNomeItem(snap.data().nome);
+      setValorItem(snap.data().valor.toString());
+      setEditItemId(itemId);
+      setOpen(true);
+    }
+  }
+
+  async function handleDeleteItem(itemId: string) {
+    await deleteDoc(doc(db, "listas", listaId, "itens", itemId));
+  }
+
+  const total = itens.reduce((acc, item) => acc + item.valor, 0);
+
+  if (!listaInfo)
+    return <p className="text-center">Carregando dados da lista...</p>;
+
+  return (
+    <Container>
+      <main className="py-10 flex flex-col gap-6">
+        <Link
+          to="/dashboard"
+          className="flex items-center gap-2 hover:text-blue-500 mb-10"
+        >
+          <FiArrowLeft size={20} />
+          Voltar
+        </Link>
+
+        <section className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold">{listaInfo.nome}</h2>
+
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 self-start flex items-center gap-2 cursor-pointer">
+                <FiPlus size={18} />
+                Adicionar Item
+              </button>
+            </DialogTrigger>
+
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>
+                  {editItemId ? "Editar Item" : "Adicionar Novo Item"}
+                </DialogTitle>
+                <DialogDescription>
+                  {editItemId
+                    ? "Altere os dados do item selecionado."
+                    : "Informe os dados do novo item abaixo."}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="flex flex-col gap-4 mt-4">
+                <input
+                  type="text"
+                  placeholder="Nome do item"
+                  value={nomeItem}
+                  onChange={(e) => setNomeItem(e.target.value)}
+                  className="w-full border px-4 py-2 rounded-md"
+                />
+                <input
+                  type="number"
+                  placeholder="Valor"
+                  value={valorItem}
+                  onChange={(e) => setValorItem(e.target.value)}
+                  className="w-full border px-4 py-2 rounded-md"
+                />
+
+                <div className="flex justify-end gap-2">
+                  <DialogClose asChild>
+                    <button
+                      onClick={() => {
+                        setNomeItem("");
+                        setValorItem("");
+                        setEditItemId(null);
+                      }}
+                      className="px-4 py-2 rounded-md bg-gray-300 hover:bg-gray-400 transition cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                  </DialogClose>
+                  <button
+                    onClick={handleSaveItem}
+                    className="relative px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition cursor-pointer disabled:opacity-60"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Loading />
+                      </div>
+                    ) : editItemId ? (
+                      "Salvar Alterações"
+                    ) : (
+                      "Adicionar"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </section>
+
+        {itens.length === 0 ? (
+          <p className="text-center text-gray-500">Nenhum item encontrado.</p>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {itens.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between bg-white/70 border border-gray-300 shadow-md rounded-md p-4"
+              >
+                <div>
+                  <h3 className="text-lg font-semibold">{item.nome}</h3>
+                  <p className="text-gray-600">
+                    Valor: {formatarValor(item.valor)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleEditItem(item.id)}
+                    className="p-2 text-blue-600 hover:text-blue-800 transition cursor-pointer"
+                  >
+                    <FiEdit size={20} />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteItem(item.id)}
+                    className="p-2 text-red-600 hover:text-red-800 transition cursor-pointer"
+                  >
+                    <FiTrash2 size={20} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="text-right text-xl font-bold mt-6">
+          Total: {formatarValor(total)}
+        </div>
+      </main>
+    </Container>
+  );
+}
