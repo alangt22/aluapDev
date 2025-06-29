@@ -1,6 +1,24 @@
 import { type ReactNode, createContext, useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../services/firebaseConnection";
+import { auth } from "@/services/firebaseConnection";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "@/services/firebaseConnection";
+
+async function saveUserToFirestore(user: UserProps) {
+  if (!user.uid || !user.email) return;
+
+  const userRef = doc(db, "users", user.uid);
+  const docSnap = await getDoc(userRef);
+
+  if (!docSnap.exists()) {
+    await setDoc(userRef, {
+      email: user.email,
+      name: user.name ?? "",
+      createdAt: new Date(),
+    });
+  }
+}
+
 
 type AuthContextData = {
   signed: boolean;
@@ -26,13 +44,16 @@ function AuthProvider({ children }: AuthProviderProps) {
   const [loadingAuth, setLoadingAuth] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        setUser({
+        const userData: UserProps = {
           uid: user.uid,
-          name: user?.displayName,
-          email: user?.email,
-        });
+          name: user.displayName,
+          email: user.email,
+        };
+
+        setUser(userData);
+        await saveUserToFirestore(userData); 
         setLoadingAuth(false);
       } else {
         setUser(null);

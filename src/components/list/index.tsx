@@ -8,12 +8,12 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../../services/firebaseConnection";
 import { Container } from "../container";
 import { FiEdit, FiTrash2, FiPlus, FiArrowLeft } from "react-icons/fi";
 import { Link } from "react-router-dom";
-
 import {
   Dialog,
   DialogTrigger,
@@ -24,6 +24,28 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Loading } from "../loading";
+import { z } from "zod";
+
+const categorias = [
+  "Comida",
+  "Transporte",
+  "Educação",
+  "Saúde",
+  "Lazer",
+  "Moradia",
+  "Contas",
+  "Investimentos",
+  "Compras",
+  "Outros",
+] as const;
+
+const itemSchema = z.object({
+  nome: z.string().min(1, "Nome é obrigatório"),
+  valor: z.string().refine((val) => !isNaN(Number(val)), "Valor inválido"),
+  categoria: z.enum(categorias, {
+    errorMap: () => ({ message: "Selecione uma categoria válida" }),
+  }),
+});
 
 type ListProps = {
   listaId: string;
@@ -33,6 +55,8 @@ interface ItemProps {
   id: string;
   nome: string;
   valor: number;
+  categoria: string;
+  createdAt: Date;
 }
 
 export function List({ listaId }: ListProps) {
@@ -43,8 +67,17 @@ export function List({ listaId }: ListProps) {
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [nomeItem, setNomeItem] = useState("");
   const [valorItem, setValorItem] = useState("");
-
+  const [categoriaItem, setCategoriaItem] = useState<(typeof categorias)[number]>(categorias[0]);
   const [loading, setLoading] = useState(false);
+
+  const formatarData = (data: Date | null) => {
+    if (!data) return "Data não disponível";
+    return data.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
 
   const formatarValor = (valor: number) =>
     new Intl.NumberFormat("pt-BR", {
@@ -72,6 +105,8 @@ export function List({ listaId }: ListProps) {
           id: doc.id,
           nome: doc.data().nome,
           valor: doc.data().valor,
+          categoria: doc.data().categoria,
+          createdAt: doc.data().createdAt?.toDate() ?? null,
         }));
         setItens(items);
       });
@@ -81,31 +116,41 @@ export function List({ listaId }: ListProps) {
   }, [listaId]);
 
   async function handleSaveItem() {
-    const valor = parseFloat(valorItem);
-    if (!nomeItem || isNaN(valor)) {
-      alert("Preencha nome e valor corretamente");
+    const result = itemSchema.safeParse({
+      nome: nomeItem,
+      valor: valorItem,
+      categoria: categoriaItem,
+    });
+
+    if (!result.success) {
+      alert(result.error.errors.map((e) => e.message).join("\n"));
       return;
     }
 
+    const valor = parseFloat(valorItem);
     setLoading(true);
+
     try {
       if (editItemId) {
         const ref = doc(db, "listas", listaId, "itens", editItemId);
-        await updateDoc(ref, { nome: nomeItem, valor });
+        await updateDoc(ref, { nome: nomeItem, valor, categoria: categoriaItem });
       } else {
         await addDoc(collection(db, "listas", listaId, "itens"), {
           nome: nomeItem,
           valor,
+          categoria: categoriaItem,
+          createdAt: serverTimestamp(),
         });
       }
 
       setNomeItem("");
       setValorItem("");
+      setCategoriaItem(categorias[0]);
       setEditItemId(null);
       setOpen(false);
-      setLoading(false);
     } catch (err) {
       console.error("Erro ao salvar item:", err);
+    } finally {
       setLoading(false);
     }
   }
@@ -116,6 +161,7 @@ export function List({ listaId }: ListProps) {
     if (snap.exists()) {
       setNomeItem(snap.data().nome);
       setValorItem(snap.data().valor.toString());
+      setCategoriaItem(snap.data().categoria);
       setEditItemId(itemId);
       setOpen(true);
     }
@@ -179,6 +225,17 @@ export function List({ listaId }: ListProps) {
                   onChange={(e) => setValorItem(e.target.value)}
                   className="w-full border px-4 py-2 rounded-md"
                 />
+                <select
+                  value={categoriaItem}
+                  onChange={(e) => setCategoriaItem(e.target.value as typeof categorias[number])}
+                  className="w-full border px-4 py-2 rounded-md"
+                >
+                  {categorias.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
 
                 <div className="flex justify-end gap-2">
                   <DialogClose asChild>
@@ -186,6 +243,7 @@ export function List({ listaId }: ListProps) {
                       onClick={() => {
                         setNomeItem("");
                         setValorItem("");
+                        setCategoriaItem(categorias[0]);
                         setEditItemId(null);
                       }}
                       className="px-4 py-2 rounded-md bg-gray-300 hover:bg-gray-400 transition cursor-pointer"
@@ -198,15 +256,7 @@ export function List({ listaId }: ListProps) {
                     className="relative px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition cursor-pointer disabled:opacity-60"
                     disabled={loading}
                   >
-                    {loading ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <Loading />
-                      </div>
-                    ) : editItemId ? (
-                      "Salvar Alterações"
-                    ) : (
-                      "Adicionar"
-                    )}
+                    {loading ? <Loading /> : editItemId ? "Salvar Alterações" : "Adicionar"}
                   </button>
                 </div>
               </div>
@@ -228,20 +278,26 @@ export function List({ listaId }: ListProps) {
                   <p className="text-gray-600">
                     Valor: {formatarValor(item.valor)}
                   </p>
+                  <p className="text-sm text-gray-500">Categoria: {item.categoria}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleEditItem(item.id)}
-                    className="p-2 text-blue-600 hover:text-blue-800 transition cursor-pointer"
-                  >
-                    <FiEdit size={20} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteItem(item.id)}
-                    className="p-2 text-red-600 hover:text-red-800 transition cursor-pointer"
-                  >
-                    <FiTrash2 size={20} />
-                  </button>
+                <div className="flex flex-col items-end">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleEditItem(item.id)}
+                      className="p-2 text-blue-600 hover:text-blue-800 transition cursor-pointer"
+                    >
+                      <FiEdit size={20} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteItem(item.id)}
+                      className="p-2 text-red-600 hover:text-red-800 transition cursor-pointer"
+                    >
+                      <FiTrash2 size={20} />
+                    </button>
+                  </div>
+                  <span className="text-sm text-gray-600 mt-2">
+                    {formatarData(item.createdAt || null)}
+                  </span>
                 </div>
               </div>
             ))}

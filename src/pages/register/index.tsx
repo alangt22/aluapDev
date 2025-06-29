@@ -85,7 +85,7 @@ export function Register() {
   return (
     <Container>
       <div className="w-full min-h-screen flex justify-center items-center flex-col gap-4">
-        <div className="mb-6 max-w-sm w-full">
+        <div className="mb-6 max-w-sm">
            <span className="text-7xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
             Aluap
             <span className="bg-gradient-to-r from-purple-500 to-purple-900 bg-clip-text text-transparent">

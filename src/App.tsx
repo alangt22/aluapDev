@@ -8,6 +8,7 @@ import { Private } from "./routes/Private";
 
 import { ResetPassword } from "./pages/resetPassword";
 import { CardDetail } from "./pages/cardDetail";
+import { ResumoFinanceiro } from "./pages/resumoFinanceiro";
 
 const router = createBrowserRouter([
   {
@@ -26,6 +27,14 @@ const router = createBrowserRouter([
         element: (
           <Private>
             <CardDetail />
+          </Private>
+        ),
+      },
+      {
+        path: "/resumo",
+        element: (
+          <Private>
+            <ResumoFinanceiro />
           </Private>
         ),
       },
