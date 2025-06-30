@@ -47,10 +47,6 @@ interface ListaProps {
   createdAt: Date | null;
 }
 
-function parseDateLocal(dateString: string): Date {
-  const [year, month, day] = dateString.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
 function formatarData(data: Date | null) {
   if (!data) return "Data não disponível";
   return data.toLocaleDateString("pt-BR", {
