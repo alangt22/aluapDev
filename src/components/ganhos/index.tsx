@@ -126,9 +126,10 @@ export function Ganhos() {
   return (
     <Container>
       <section className="w-82 flex flex-col items-center justify-center py-16">
-        <h1 className="font-bold text-2xl mb-4">Créditos</h1>
 
-        {/* Botão adicionar */}
+        <h1 className="font-bold text-2xl mb-4 text-center">Cadastre aqui seus ganhos mensais, como salários ou serviços prestados.</h1>
+
+     
         <Dialog open={openAdd} onOpenChange={setOpenAdd}>
           <DialogTrigger asChild>
             <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors mb-4 text-sm font-medium cursor-pointer">

@@ -47,7 +47,7 @@ const itemSchema = z.object({
   }),
 });
 
-type ListProps = {
+export type ListProps = {
   listaId: string;
 };
 

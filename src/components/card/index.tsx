@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { Container } from "../container";
-import { FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiEdit, FiPlus, FiTrash2 } from "react-icons/fi";
 import {
   Dialog,
   DialogTrigger,
@@ -24,6 +24,8 @@ import {
   deleteDoc,
   doc,
   writeBatch,
+  getDoc,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "@/services/firebaseConnection";
 import toast from "react-hot-toast";
@@ -49,7 +51,6 @@ function parseDateLocal(dateString: string): Date {
   const [year, month, day] = dateString.split("-").map(Number);
   return new Date(year, month - 1, day);
 }
-
 function formatarData(data: Date | null) {
   if (!data) return "Data não disponível";
   return data.toLocaleDateString("pt-BR", {
@@ -58,8 +59,6 @@ function formatarData(data: Date | null) {
     year: "numeric",
   });
 }
-
-// Função para formatar valores em moeda BRL
 const formatarValor = (valor: number) =>
   new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -72,11 +71,12 @@ export function Card() {
   const [totais, setTotais] = useState<Record<string, number>>({});
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [editItemId, setEditItemId] = useState<string | null>(null);
 
-  // useForm com schema que valida input do formulário
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
     reset,
   } = useForm<ListaFormInput>({
@@ -92,16 +92,10 @@ export function Card() {
       const fetchedListas: ListaProps[] = querySnapshot.docs.map((doc) => {
         const data = doc.data();
 
-        let vencimentoDate: Date = data.vencimento
-          ? data.vencimento.toDate
-            ? data.vencimento.toDate()
-            : new Date(data.vencimento)
-          : new Date();
-
         return {
           id: doc.id,
           nome: data.nome ?? "",
-          vencimento: vencimentoDate,
+          vencimento: data.vencimento.toDate(),
           createdAt: data.createdAt?.toDate() ?? null,
         };
       });
@@ -138,21 +132,32 @@ export function Card() {
 
     setLoading(true);
     try {
-      const vencimentoDate = parseDateLocal(data.vencimento);
+         const [ano, mes, dia] = data.vencimento.split("-").map(Number);
+      const dataLocal = new Date(ano, mes - 1, dia); 
 
-      await addDoc(collection(db, "listas"), {
-        nome: data.nome,
-        vencimento: vencimentoDate,
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-      });
+      if (editItemId) {
+        await updateDoc(doc(db, "listas", editItemId), {
+          nome: data.nome,
+          userId: user.uid,
+          vencimento: dataLocal,
+        });
+        toast.success("Lista atualizada com sucesso!");
+      } else {
+        await addDoc(collection(db, "listas"), {
+          nome: data.nome,
+          vencimento: dataLocal,
+          userId: user.uid,
+          createdAt: serverTimestamp(),
+        });
+        toast.success("Lista criada com sucesso!");
+      }
 
-      toast.success("Lista criada com sucesso!");
       setOpen(false);
-      reset(); // limpa formulário
+      reset();
+      setEditItemId(null);
     } catch (error) {
-      console.error("Erro ao criar lista:", error);
-      toast.error("Erro ao criar lista. Tente novamente.");
+      console.error("Erro ao salvar lista:", error);
+      toast.error("Erro ao salvar lista. Tente novamente.");
     }
     setLoading(false);
   };
@@ -175,10 +180,27 @@ export function Card() {
     }
   }
 
+  async function handleEditItem(listaId: string) {
+    const ref = doc(db, "listas", listaId);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      const data = snap.data();
+      setValue("nome", data.nome || "");
+
+      const venc = data.vencimento?.toDate?.() || new Date(data.vencimento);
+      setValue("vencimento", venc.toISOString().split("T")[0]);
+      setEditItemId(listaId);
+      setOpen(true);
+    }
+  }
+
   return (
     <Container>
       <main className="py-10 flex flex-col gap-8 w-[350px] lg:w-[500px]">
-        <h1 className="font-bold text-2xl text-center">Gastos</h1>
+        <h1 className="font-bold text-2xl text-center">
+          Registre aqui seus gastos diários ou mensais, como contas, compras ou
+          transporte.
+        </h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <button
@@ -192,9 +214,13 @@ export function Card() {
 
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Criar nova lista</DialogTitle>
+              <DialogTitle>
+                {editItemId ? "Editar Lista" : "Nova Lista"}
+              </DialogTitle>
               <DialogDescription>
-                Preencha os dados abaixo para criar uma nova lista
+                {editItemId
+                  ? "Atualize os dados da lista."
+                  : "Preencha os dados abaixo para criar uma nova lista"}
               </DialogDescription>
             </DialogHeader>
 
@@ -244,7 +270,7 @@ export function Card() {
                   type="submit"
                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition cursor-pointer"
                 >
-                  {loading ? <Loading /> : "Criar"}
+                  {loading ? <Loading /> : editItemId ? "Salvar" : "Criar"}
                 </button>
               </div>
             </form>
@@ -260,10 +286,16 @@ export function Card() {
             listas.map((lista) => (
               <div
                 key={lista.id}
-                className="w-full max-w-sm h-full flex flex-col justify-between items-center gap-2 border border-gray-300 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 text-black shadow-xl p-4 mb-8"
+                className="relative w-full max-w-sm h-full flex flex-col justify-between items-center gap-2 border border-gray-300 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 text-black shadow-xl p-4 mb-8"
               >
                 <button
-                  className="absolute top-2 right-2 text-white hover:text-red-500 transition duration-200"
+                  onClick={() => handleEditItem(lista.id)}
+                  className="absolute top-2 right-12 text-white hover:text-gray-800 transition cursor-pointer"
+                >
+                  <FiEdit size={20} />
+                </button>
+                <button
+                  className="absolute top-2 right-2 text-white hover:text-red-500 transition duration-200 cursor-pointer"
                   onClick={() => handleDelete(lista.id)}
                   title="Excluir lista"
                 >
