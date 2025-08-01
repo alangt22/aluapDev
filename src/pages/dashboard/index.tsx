@@ -1,14 +1,25 @@
 import { AuthContext } from "../../context/AuthContext";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { Container } from "../../components/container";
 import { Card } from "../../components/card";
 import { Ganhos } from "@/components/ganhos";
 
 import { FiBarChart2 } from "react-icons/fi";
-import { Link } from "react-router-dom"; 
+import { Link } from "react-router-dom";
 
 export function Dashboard() {
   const { user } = useContext(AuthContext);
+
+  useEffect(() => {
+    document.title = "Dashboard | AluapDEV";
+    const metaDescription = document.querySelector("meta[name='description']");
+    if (metaDescription) {
+      metaDescription.setAttribute(
+        "content",
+         "Acompanhe seu painel e gerencie seus dados na plataforma AluapDEV."
+      );
+    }
+  }, []);
 
   return (
     <Container>
@@ -29,22 +40,19 @@ export function Dashboard() {
           </div>
         </section>
       </div>
-<div className="fixed bottom-6 right-6 md:hidden z-50 group">
-  <Link
-    to="/resumo"
-    className="w-14 h-14 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all duration-200"
-    aria-label="Ir para retorno financeiro"
-  >
-    <FiBarChart2 size={24} />
-  </Link>
+      <div className="fixed bottom-6 right-6 md:hidden z-50 group">
+        <Link
+          to="/resumo"
+          className="w-14 h-14 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all duration-200"
+          aria-label="Ir para retorno financeiro"
+        >
+          <FiBarChart2 size={24} />
+        </Link>
 
-  
-  <div className="absolute bottom-16 right-1/2 translate-x-1/2 bg-black text-white text-xs font-medium px-3 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-    Resumo financeiro
-  </div>
-</div>
-
-
+        <div className="absolute bottom-16 right-1/2 translate-x-1/2 bg-black text-white text-xs font-medium px-3 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+          Resumo financeiro
+        </div>
+      </div>
     </Container>
   );
 }

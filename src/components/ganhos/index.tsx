@@ -156,7 +156,7 @@ export function Ganhos() {
                   type="text"
                   {...register("nome")}
                   className="px-3 py-2 border rounded-md"
-                  placeholder="Ex: Salário, aluguel..."
+                  placeholder="Ex: Salário..."
                 />
                 {errors.nome && (
                   <span className="text-red-500">{errors.nome.message}</span>
@@ -168,6 +168,7 @@ export function Ganhos() {
                 <input
                   type="number"
                   step="0.01"
+                  placeholder="Apenas números"
                   {...register("valor", { valueAsNumber: true })}
                   className="px-3 py-2 border rounded-md"
                 />

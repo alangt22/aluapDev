@@ -10,6 +10,8 @@ import { auth } from "../../services/firebaseConnection";
 import toast from "react-hot-toast";
 import { Loading } from "../../components/loading";
 
+
+
 const schema = z.object({
   email: z.string().email("E-mail inválido").nonempty("E-mail obrigatório"),
   password: z.string().nonempty("Senha obrigatória"),
@@ -29,6 +31,15 @@ export function Login() {
     resolver: zodResolver(schema),
     mode: "onChange",
   });
+
+  useEffect(() => {
+  document.title = "Login | AluapDEV";
+  const metaDescription = document.querySelector("meta[name='description']");
+  if (metaDescription) {
+    metaDescription.setAttribute("content", "Faça login na plataforma AluapDEV.");
+  }
+}, []);
+
 
   useEffect(() => {
     async function handleLogout() {

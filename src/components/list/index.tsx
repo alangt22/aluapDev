@@ -67,7 +67,9 @@ export function List({ listaId }: ListProps) {
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [nomeItem, setNomeItem] = useState("");
   const [valorItem, setValorItem] = useState("");
-  const [categoriaItem, setCategoriaItem] = useState<(typeof categorias)[number]>(categorias[0]);
+  const [categoriaItem, setCategoriaItem] = useState<
+    (typeof categorias)[number]
+  >(categorias[0]);
   const [loading, setLoading] = useState(false);
 
   const formatarData = (data: Date | null) => {
@@ -84,6 +86,27 @@ export function List({ listaId }: ListProps) {
       style: "currency",
       currency: "BRL",
     }).format(valor);
+
+  useEffect(() => {
+    if (listaInfo?.nome) {
+      document.title = `${listaInfo.nome} | AluapDEV`;
+
+      const metaDescription = document.querySelector(
+        "meta[name='description']"
+      );
+      if (metaDescription) {
+        metaDescription.setAttribute(
+          "content",
+          `Detalhes da lista: ${listaInfo.nome}`
+        );
+      } else {
+        const meta = document.createElement("meta");
+        meta.name = "description";
+        meta.content = `Detalhes da lista: ${listaInfo.nome}`;
+        document.head.appendChild(meta);
+      }
+    }
+  }, [listaInfo]);
 
   useEffect(() => {
     const fetchListaInfo = async () => {
@@ -133,7 +156,11 @@ export function List({ listaId }: ListProps) {
     try {
       if (editItemId) {
         const ref = doc(db, "listas", listaId, "itens", editItemId);
-        await updateDoc(ref, { nome: nomeItem, valor, categoria: categoriaItem });
+        await updateDoc(ref, {
+          nome: nomeItem,
+          valor,
+          categoria: categoriaItem,
+        });
       } else {
         await addDoc(collection(db, "listas", listaId, "itens"), {
           nome: nomeItem,
@@ -227,7 +254,11 @@ export function List({ listaId }: ListProps) {
                 />
                 <select
                   value={categoriaItem}
-                  onChange={(e) => setCategoriaItem(e.target.value as typeof categorias[number])}
+                  onChange={(e) =>
+                    setCategoriaItem(
+                      e.target.value as (typeof categorias)[number]
+                    )
+                  }
                   className="w-full border px-4 py-2 rounded-md"
                 >
                   {categorias.map((cat) => (
@@ -256,7 +287,13 @@ export function List({ listaId }: ListProps) {
                     className="relative px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition cursor-pointer disabled:opacity-60"
                     disabled={loading}
                   >
-                    {loading ? <Loading /> : editItemId ? "Salvar Alterações" : "Adicionar"}
+                    {loading ? (
+                      <Loading />
+                    ) : editItemId ? (
+                      "Salvar Alterações"
+                    ) : (
+                      "Adicionar"
+                    )}
                   </button>
                 </div>
               </div>
@@ -278,7 +315,9 @@ export function List({ listaId }: ListProps) {
                   <p className="text-gray-600">
                     Valor: {formatarValor(item.valor)}
                   </p>
-                  <p className="text-sm text-gray-500">Categoria: {item.categoria}</p>
+                  <p className="text-sm text-gray-500">
+                    Categoria: {item.categoria}
+                  </p>
                 </div>
                 <div className="flex flex-col items-end">
                   <div className="flex items-center gap-2">

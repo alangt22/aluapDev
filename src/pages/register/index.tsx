@@ -41,6 +41,17 @@ export function Register() {
   });
 
   useEffect(() => {
+    document.title = "Register | AluapDEV";
+    const metaDescription = document.querySelector("meta[name='description']");
+    if (metaDescription) {
+      metaDescription.setAttribute(
+        "content",
+        "Crie sua conta na plataforma AluapDEV."
+      );
+    }
+  }, []);
+
+  useEffect(() => {
     async function handleLogout() {
       await signOut(auth);
     }
@@ -86,7 +97,7 @@ export function Register() {
     <Container>
       <div className="w-full min-h-screen flex justify-center items-center flex-col gap-4">
         <div className="mb-6 max-w-sm">
-           <span className="text-7xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+          <span className="text-7xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
             Aluap
             <span className="bg-gradient-to-r from-purple-500 to-purple-900 bg-clip-text text-transparent">
               DEV

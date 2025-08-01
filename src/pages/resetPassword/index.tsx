@@ -1,13 +1,22 @@
 // pages/ResetPassword.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../../services/firebaseConnection";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { FiArrowLeft } from "react-icons/fi";
 
 export function ResetPassword() {
   const [email, setEmail] = useState("");
   const naigate = useNavigate();
+
+  useEffect(() => {
+  document.title = "Reset Password | AluapDEV";
+  const metaDescription = document.querySelector("meta[name='description']");
+  if (metaDescription) {
+    metaDescription.setAttribute("content", "Faça login na plataforma AluapDEV.");
+  }
+}, []);
 
   async function handleResetPassword(e: React.FormEvent) {
     e.preventDefault();
@@ -49,6 +58,10 @@ export function ResetPassword() {
           Enviar e-mail de redefinição
         </button>
       </form>
+      <a href="/login" className="flex items-center mt-4 text-blue-600 hover:text-blue-800"> 
+      <FiArrowLeft className="w-4 h-4" />
+      Voltar
+      </a>
     </div>
   );
 }

@@ -50,6 +50,16 @@ export function ResumoFinanceiro() {
     Record<string, number>
   >({});
 
+
+  useEffect(() => {
+  document.title = `Resumo Financeiro | AluapDEV`;
+  const metaDescription = document.querySelector("meta[name='description']");
+  if (metaDescription) {
+    metaDescription.setAttribute("content", "Acompanhe seu resumo financeiro na plataforma AluapDEV.");
+  }
+}, []);
+
+
   useEffect(() => {
     if (!user?.uid) return;
 
@@ -158,6 +168,9 @@ export function ResumoFinanceiro() {
 
       <div className="p-4 border rounded-md bg-white shadow max-w-md mx-auto mt-4">
         <h2 className="text-xl font-bold mb-4">Resumo Financeiro</h2>
+        <p className="text-sm text-gray-600 mb-2">
+          Mês selecionado: {mesSelecionado.replace("-", "/")}
+        </p>
         <p>Créditos: R$ {totalCreditos.toFixed(2)}</p>
         <p>Gastos: R$ {totalGastos.toFixed(2)}</p>
         <p className="font-semibold mt-2">Saldo: R$ {saldo.toFixed(2)}</p>
@@ -195,7 +208,7 @@ export function ResumoFinanceiro() {
                 nameKey="name"
                 outerRadius={120}
                 fill="#8884d8"
-                label
+                
               >
                 {dataGrafico.map((_, index) => (
                   <Cell
