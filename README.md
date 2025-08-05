@@ -1,22 +1,36 @@
-# 💻 AluapDev — Gerenciador de Finanças
+# 💻 AluapDev — Gerenciador de Finanças Pessoais
 
-Projeto desenvolvido com **React 19**, **TypeScript**, **Vite**, **TailwindCSS** e integração com **Firebase**. A aplicação permite criar, visualizar e excluir listas com controle de valores, utilizando boas práticas modernas de front-end.
+**AluapDev** é uma aplicação web moderna desenvolvida com React e Firebase, que permite organizar suas finanças pessoais de forma simples, eficiente e visual. Crie listas com vencimentos, adicione despesas e rendas, acompanhe seus gastos mensais e receba alertas por e-mail quando houver cobranças próximas ao vencimento.
+
+---
+🔗 **Acesse aqui:** [aluapdev.vercel.app](https://aluapdev.vercel.app)
+
+## ✨ Funcionalidades
+
+- 🔐 Cadastro e login com e-mail e senha via Firebase
+- 💵 Registro de entradas (rendas mensais, salários, etc.)
+- 🧾 Criação de listas de gastos com data de vencimento
+- 🧩 Adição de itens/despesas dentro de cada lista
+- 📧 Envio automático de e-mails alertando vencimentos
+- 📊 Resumo financeiro mensal com:
+  - Total de receitas
+  - Total de despesas
+  - Saldo final
+  - Gráfico detalhado com distribuição por categoria
 
 ---
 
 ## 🚀 Tecnologias Utilizadas
 
-- [React](https://reactjs.org/)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Vite](https://vitejs.dev/)
-- [TailwindCSS](https://tailwindcss.com/)
-- [React Hook Form](https://react-hook-form.com/)
-- [Zod](https://zod.dev/)
-- [Firebase](https://firebase.google.com/)
-- [Radix UI](https://www.radix-ui.com/)
-- [Lucide Icons](https://lucide.dev/)
-- [React Router DOM](https://reactrouter.com/)
-- [ESLint](https://eslint.org/)
-- [React Hot Toast](https://react-hot-toast.com/)
+- **React**
+- **TypeScript**
+- **Vite**
+- **Tailwind CSS**
+- **Firebase (Auth, Firestore)**
+- **React Hook Form**
+- **Zod**
+- **React Router DOM**
+- **Recharts**
 
 ---
+
